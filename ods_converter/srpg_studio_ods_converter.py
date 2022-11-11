@@ -2,25 +2,26 @@
 # Released under the MIT license
 # https://licenses.opensource.jp/MIT/MIT.html
 
-import csv
 import os
 import sys
 from tkinter import StringVar, Tk, W, filedialog, ttk
 
+import pandas as pd
+
 
 class DialogTitle:
-    MAIN_DIALOG = "SRPG Studio用 CSVコンバーター"
-    OPEN_FILE_DIALOG = "CSVファイルを開く"
+    MAIN_DIALOG = "SRPG Studio用 ODSコンバーター"
+    OPEN_FILE_DIALOG = "ODSファイルを開く"
     CONFIRM_DIALOG = "確認"
     ERROR_DIALOG = "エラー"
     END_DIALOG = "変換完了"
 
 
 class MessageText:
-    MAIN_DIALOG = "変換したいCSVファイルを選択し、変換ボタンを押してください。"
+    MAIN_DIALOG = "変換したいODSファイルを選択し、変換ボタンを押してください。"
     FILE = "ファイル:"
     CONFIRM_DIALOG = "選択したファイルを変換してもよろしいですか？"
-    WRONG_EXT_DIALOG = "異なる形式のファイルが選択されました。\ncsv形式のファイルを選択し直してください。"
+    WRONG_EXT_DIALOG = "異なる形式のファイルが選択されました。\nods形式のファイルを選択し直してください。"
     BLANK_ENTRY_DIALOG = "ファイル名を指定してください。"
     NOT_EXIST_FILE_DIALOG = "存在しないファイルです。\nファイルを選択し直してください。"
     FILE_OPEN_ERROR_DIALOG = "ファイルの読み込みに失敗しました。"
@@ -102,7 +103,7 @@ def main_dialog():
 def file_button_clicked(entry_text):
     file_name = filedialog.askopenfilename(
         title=DialogTitle.OPEN_FILE_DIALOG,
-        filetypes=[("CSVファイル", "*.csv")],
+        filetypes=[("ODSファイル", "*.ods")],
         initialdir=os.path.dirname(os.path.abspath(sys.executable)),
     )
 
@@ -126,7 +127,7 @@ def entry_check(entry_text):
         )
         return
 
-    if not entry_text.endswith(".csv"):
+    if not entry_text.endswith(".ods"):
         ok_button_dialog(
             DialogTitle.ERROR_DIALOG,
             MessageText.WRONG_EXT_DIALOG,
@@ -155,7 +156,7 @@ def confirm_dialog(entry_text):
     button_yes = ttk.Button(
         frame2,
         text=ButtonText.YES,
-        command=lambda: [root.destroy(), srpg_studio_csv_convert(entry_text)],
+        command=lambda: [root.destroy(), srpg_studio_ods_convert(entry_text)],
     )
 
     button_no = ttk.Button(frame2, text=ButtonText.NO, command=lambda: root.destroy())
@@ -198,11 +199,9 @@ def is_half_width_digit(num_str):
         return False
 
 
-def srpg_studio_csv_convert(entry_text):
+def srpg_studio_ods_convert(entry_text):
     try:
-        with open(entry_text, encoding="utf-8") as in_file:
-            reader = csv.reader(in_file)
-            row_list = [tmp_row for tmp_row in reader]
+        df_dict = pd.read_excel(entry_text, sheet_name=None, engine="odf")
     except:
         ok_button_dialog(
             DialogTitle.ERROR_DIALOG,
@@ -212,127 +211,122 @@ def srpg_studio_csv_convert(entry_text):
 
     try:
         with open(entry_text[:-4] + ".txt", mode="w", encoding="utf-8") as out_file:
-            # 0:形式 1:発言者 2:位置 3:表情 4:内容
-            for row in row_list:
-                if row[0] == "メッセージ":
-                    if row[1] != "":
-                        out_file.write("\n")
-                        out_file.write(row[1] + "：" + row[2])
-                        if row[3] != "":
-                            out_file.write("：" + row[3] + "\n")
-                        else:
+            for df in df_dict.values():
+                df.fillna("", inplace=True)
+                for i in range(0, len(df)):
+                    sr = df.iloc[i]
+                    row = [str(elem) for elem in sr.values.tolist()]
+                    # 0:形式 1:発言者 2:位置 3:表情 4:内容
+                    if row[0] == "メッセージ":
+                        if row[1] != "":
                             out_file.write("\n")
-                        out_file.write(row[4] + "\n")
-                    else:
-                        out_file.write(row[4] + "\n")
-                elif row[0] == "テロップ":
-                    if row[2] != "":
+                            out_file.write(row[1] + "：" + row[2])
+                            if row[3] != "":
+                                out_file.write("：" + row[3] + "\n")
+                            else:
+                                out_file.write("\n")
+                            out_file.write(row[4] + "\n")
+                        else:
+                            out_file.write(row[4] + "\n")
+                    elif row[0] == "テロップ":
+                        if row[2] != "":
+                            out_file.write("\n")
+                            out_file.write("テロップ：" + row[2] + "\n")
+                            out_file.write(row[4] + "\n")
+                        else:
+                            out_file.write(row[4] + "\n")
+                    elif row[0] == "メッセージタイトル":
+                        if row[2] != "":
+                            out_file.write("\n")
+                            out_file.write("タイトル：" + row[2] + "\n")
+                            out_file.write(row[4] + "\n")
+                        else:
+                            out_file.write(row[4] + "\n")
+                    elif row[0] == "スチルメッセージ":
+                        if row[1] != "":
+                            out_file.write("\n")
+                            out_file.write(row[1] + "：スチル\n")
+                            out_file.write(row[4] + "\n")
+                        else:
+                            out_file.write(row[4] + "\n")
+                    elif row[0] == "情報ウィンドウ":
+                        if row[1] != "":
+                            out_file.write("\n")
+                            out_file.write("情報：" + row[1] + "\n")
+                            out_file.write(row[4] + "\n")
+                        else:
+                            out_file.write(row[4] + "\n")
+                    elif row[0] == "メッセージスクロール":
+                        if row[2] != "":
+                            out_file.write("\n")
+                            out_file.write("スクロール：" + row[2] + "\n")
+                            out_file.write(row[4] + "\n")
+                        else:
+                            out_file.write(row[4] + "\n")
+                    elif row[0] == "選択肢":
+                        num = "0"
+                        if is_half_width_digit(row[1]):
+                            num = row[1]
+                        choices = row[4].split(",")
                         out_file.write("\n")
-                        out_file.write("テロップ：" + row[2] + "\n")
-                        out_file.write(row[4] + "\n")
-                    else:
-                        out_file.write(row[4] + "\n")
-                elif row[0] == "メッセージタイトル":
-                    if row[2] != "":
+                        out_file.write("選択肢：" + num + "\n")
+                        for c in choices:
+                            out_file.write(c + "\n")
+                    elif row[0] == "【場所イベント】":
+                        num = "0"
+                        if is_half_width_digit(row[1]):
+                            num = row[1]
                         out_file.write("\n")
-                        out_file.write("タイトル：" + row[2] + "\n")
-                        out_file.write(row[4] + "\n")
-                    else:
-                        out_file.write(row[4] + "\n")
-                elif row[0] == "スチルメッセージ":
-                    if row[1] != "":
+                        out_file.write("<PL" + num + ">\n")
+                    elif row[0] == "【自動開始イベント】":
+                        num = "0"
+                        if is_half_width_digit(row[1]):
+                            num = row[1]
                         out_file.write("\n")
-                        out_file.write(row[1] + "：スチル\n")
-                        out_file.write(row[4] + "\n")
-                    else:
-                        out_file.write(row[4] + "\n")
-                elif row[0] == "情報ウィンドウ":
-                    if row[1] != "":
+                        out_file.write("<AT" + num + ">\n")
+                    elif row[0] == "【会話イベント】":
+                        num = "0"
+                        if is_half_width_digit(row[1]):
+                            num = row[1]
                         out_file.write("\n")
-                        out_file.write("情報：" + row[1] + "\n")
-                        out_file.write(row[4] + "\n")
-                    else:
-                        out_file.write(row[4] + "\n")
-                elif row[0] == "メッセージスクロール":
-                    if row[2] != "":
+                        out_file.write("<TK" + num + ">\n")
+                    elif row[0] == "【オープニングイベント】":
+                        num = "0"
+                        if is_half_width_digit(row[1]):
+                            num = row[1]
                         out_file.write("\n")
-                        out_file.write("スクロール：" + row[2] + "\n")
-                        out_file.write(row[4] + "\n")
-                    else:
-                        out_file.write(row[4] + "\n")
-                elif row[0] == "選択肢":
-                    if is_half_width_digit(row[1]):
-                        num = row[1]
-                    else:
+                        out_file.write("<OP" + num + ">\n")
+                    elif row[0] == "【エンディングイベント】":
                         num = "0"
-                    choices = row[4].split(",")
-                    out_file.write("\n")
-                    out_file.write("選択肢：" + num + "\n")
-                    for c in choices:
-                        out_file.write(c + "\n")
-                elif row[0] == "【場所イベント】":
-                    if is_half_width_digit(row[1]):
-                        num = row[1]
-                    else:
+                        if is_half_width_digit(row[1]):
+                            num = row[1]
+                        out_file.write("\n")
+                        out_file.write("<ED" + num + ">\n")
+                    elif row[0] == "【コミュニケーションイベント】":
                         num = "0"
-                    out_file.write("\n")
-                    out_file.write("<PL" + num + ">\n")
-                elif row[0] == "【自動開始イベント】":
-                    if is_half_width_digit(row[1]):
-                        num = row[1]
-                    else:
+                        if is_half_width_digit(row[1]):
+                            num = row[1]
+                        out_file.write("\n")
+                        out_file.write("<CM" + num + ">\n")
+                    elif row[0] == "【回想イベント】":
                         num = "0"
-                    out_file.write("\n")
-                    out_file.write("<AT" + num + ">\n")
-                elif row[0] == "【会話イベント】":
-                    if is_half_width_digit(row[1]):
-                        num = row[1]
-                    else:
+                        if is_half_width_digit(row[1]):
+                            num = row[1]
+                        out_file.write("\n")
+                        out_file.write("<RE" + num + ">\n")
+                    elif row[0] == "【マップ共有イベント】":
                         num = "0"
-                    out_file.write("\n")
-                    out_file.write("<TK" + num + ">\n")
-                elif row[0] == "【オープニングイベント】":
-                    if is_half_width_digit(row[1]):
-                        num = row[1]
-                    else:
+                        if is_half_width_digit(row[1]):
+                            num = row[1]
+                        out_file.write("\n")
+                        out_file.write("<MC" + num + ">\n")
+                    elif row[0] == "【ブックマークイベント】":
                         num = "0"
-                    out_file.write("\n")
-                    out_file.write("<OP" + num + ">\n")
-                elif row[0] == "【エンディングイベント】":
-                    if is_half_width_digit(row[1]):
-                        num = row[1]
-                    else:
-                        num = "0"
-                    out_file.write("\n")
-                    out_file.write("<ED" + num + ">\n")
-                elif row[0] == "【コミュニケーションイベント】":
-                    if is_half_width_digit(row[1]):
-                        num = row[1]
-                    else:
-                        num = "0"
-                    out_file.write("\n")
-                    out_file.write("<CM" + num + ">\n")
-                elif row[0] == "【回想イベント】":
-                    if is_half_width_digit(row[1]):
-                        num = row[1]
-                    else:
-                        num = "0"
-                    out_file.write("\n")
-                    out_file.write("<RE" + num + ">\n")
-                elif row[0] == "【マップ共有イベント】":
-                    if is_half_width_digit(row[1]):
-                        num = row[1]
-                    else:
-                        num = "0"
-                    out_file.write("\n")
-                    out_file.write("<MC" + num + ">\n")
-                elif row[0] == "【ブックマークイベント】":
-                    if is_half_width_digit(row[1]):
-                        num = row[1]
-                    else:
-                        num = "0"
-                    out_file.write("\n")
-                    out_file.write("<BK" + num + ">\n")
+                        if is_half_width_digit(row[1]):
+                            num = row[1]
+                        out_file.write("\n")
+                        out_file.write("<BK" + num + ">\n")
+                out_file.write("\n")
     except:
         ok_button_dialog(
             DialogTitle.ERROR_DIALOG,
