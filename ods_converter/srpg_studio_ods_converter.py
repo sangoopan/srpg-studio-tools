@@ -114,6 +114,7 @@ class MethodSelectDialog(Frame):
         self.button_convert = ttk.Button(
             self,
             text=ButtonText.CONVERT,
+            state="disable",
             command=lambda: [root.destroy(), self.convert_fork()],
         )
         self.button_cancel = ttk.Button(
@@ -140,6 +141,7 @@ class MethodSelectDialog(Frame):
         else:
             self.selected_method.set(SelectedMethodValue.ONE_SHEET_CONVERT)
             self.combo_sheets["state"] = "readonly"
+        self.button_convert["state"] = "enable"
 
     def select_combo(self, event):
         self.selected_sheet_name.set(self.combo_sheets.get())
