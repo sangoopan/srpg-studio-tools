@@ -10,7 +10,7 @@ import pandas as pd
 
 
 class DialogTitle:
-    MAIN_DIALOG = "SRPG Studio用 ODSコンバーター"
+    FILE_SELECT_DIALOG = "SRPG Studio用 ODSコンバーター"
     OPEN_FILE_DIALOG = "ODSファイルを開く"
     METHOD_SELECT_DIALOG = "変換方法の選択"
     ERROR_DIALOG = "エラー"
@@ -18,7 +18,7 @@ class DialogTitle:
 
 
 class MessageText:
-    MAIN_DIALOG = "変換したいODSファイルを選択し、[読み込む]ボタンを押してください。"
+    FILE_SELECT_DIALOG = "変換したいODSファイルを選択し、[読み込む]ボタンを押してください。"
     FILE = "ファイル:"
     ALL_SHEET_CONVERT = "全てのシートを変換"
     ONE_SHEET_CONVERT = "1つのシートを変換"
@@ -63,7 +63,7 @@ class MethodSelectDialog(Frame):
             self.df_dict = pd.read_excel(self.entry_text, sheet_name=None, engine="odf")
             self.sheet_names = list(self.df_dict.keys())
         except:
-            ok_button_dialog(
+            open_ok_button_dialog(
                 DialogTitle.ERROR_DIALOG,
                 MessageText.FILE_OPEN_ERROR_DIALOG,
                 LabelWidth.FILE_OPEN_ERROR_DIALOG,
@@ -153,122 +153,122 @@ class MethodSelectDialog(Frame):
             one_sheet_convert(self.entry_text, df, sheet_name)
 
 
+class FileSelectDialog(Frame):
+    def __init__(self, root=None):
+        super().__init__(root)
+        root.title(DialogTitle.FILE_SELECT_DIALOG)
+        posx = int(root.winfo_screenwidth() / 3)
+        posy = int(root.winfo_screenheight() / 3)
+        root.geometry("+" + str(posx) + "+" + str(posy))
+
+        self.label_description = ttk.Label(self, text=MessageText.FILE_SELECT_DIALOG)
+
+        self.label_file = ttk.Label(
+            self,
+            text=MessageText.FILE,
+        )
+        self.entry_text = StringVar()
+        self.file_entry = ttk.Entry(self, textvariable=self.entry_text, width=33)
+        self.button_file = ttk.Button(
+            self, text=ButtonText.OPEN, command=lambda: self.file_button_clicked()
+        )
+
+        self.button_read = ttk.Button(
+            self, text=ButtonText.READ, command=lambda: self.entry_check()
+        )
+        self.button_close = ttk.Button(
+            self, text=ButtonText.CLOSE, command=lambda: [root.destroy(), exit()]
+        )
+
+        # ダイアログを表示
+        self.grid()
+        self.label_description.grid(row=0, column=0, columnspan=6, padx=5, pady=5)
+        self.label_file.grid(row=1, column=0, pady=5)
+        self.file_entry.grid(row=1, column=1, columnspan=4, pady=5)
+        self.button_file.grid(row=1, column=5, pady=5)
+        self.button_read.grid(row=2, column=1, columnspan=2, pady=5)
+        self.button_close.grid(row=2, column=3, columnspan=2, pady=5)
+
+    def file_button_clicked(self):
+        file_name = filedialog.askopenfilename(
+            title=DialogTitle.OPEN_FILE_DIALOG,
+            filetypes=[("ODSファイル", "*.ods")],
+            initialdir=os.path.dirname(os.path.abspath(sys.executable)),
+        )
+
+        self.entry_text.set(file_name)
+
+    def entry_check(self):
+        entry_text = self.entry_text.get()
+        if entry_text == "":
+            open_ok_button_dialog(
+                DialogTitle.ERROR_DIALOG,
+                MessageText.BLANK_ENTRY_DIALOG,
+                LabelWidth.BLANK_ENTRY_DIALOG,
+            )
+            return
+
+        if not os.path.isfile(entry_text):
+            open_ok_button_dialog(
+                DialogTitle.ERROR_DIALOG,
+                MessageText.NOT_EXIST_FILE_DIALOG,
+                LabelWidth.NOT_EXIST_FILE_DIALOG,
+            )
+            return
+
+        if not entry_text.endswith(".ods"):
+            open_ok_button_dialog(
+                DialogTitle.ERROR_DIALOG,
+                MessageText.WRONG_EXT_DIALOG,
+                LabelWidth.WRONG_EXT_DIALOG,
+            )
+            return
+
+        open_method_select_dialog(entry_text)
+
+
+class OkButtonDialog(Frame):
+    def __init__(self, root=None, dialog_title="", message_text="", label_width=0):
+        super().__init__(root)
+        root.title(dialog_title)
+        posx = int(root.winfo_screenwidth() / 5 * 2)
+        posy = int(root.winfo_screenheight() / 5 * 2)
+        root.geometry("+" + str(posx) + "+" + str(posy))
+
+        self.label_message = ttk.Label(
+            self, text=message_text, width=label_width, padding=(10)
+        )
+
+        self.button_ok = ttk.Button(
+            self, text=ButtonText.OK, command=lambda: root.destroy()
+        )
+
+        # ダイアログを表示
+        self.grid()
+        self.label_message.grid(row=0, column=0)
+        self.button_ok.grid(row=1, column=0)
+
+
 def main():
-    main_dialog()
+    open_file_select_dialog()
 
 
-def main_dialog():
+def open_file_select_dialog():
     root = Tk()
-    root.title(DialogTitle.MAIN_DIALOG)
-    posx = int(root.winfo_screenwidth() / 3)
-    posy = int(root.winfo_screenheight() / 3)
-    root.geometry("+" + str(posx) + "+" + str(posy))
-
-    frame1 = ttk.Frame(root, padding=10)
-
-    label_description = ttk.Label(frame1, text=MessageText.MAIN_DIALOG)
-
-    frame2 = ttk.Frame(root, padding=10)
-
-    lavel_file = ttk.Label(
-        frame2,
-        text=MessageText.FILE,
-    )
-
-    entry_text = StringVar()
-    file_entry = ttk.Entry(frame2, textvariable=entry_text, width=30)
-
-    button_file = ttk.Button(
-        frame2, text=ButtonText.OPEN, command=lambda: file_button_clicked(entry_text)
-    )
-
-    frame3 = ttk.Frame(root, padding=10)
-
-    button_read = ttk.Button(
-        frame3, text=ButtonText.READ, command=lambda: entry_check(entry_text.get())
-    )
-
-    button_close = ttk.Button(
-        frame3, text=ButtonText.CLOSE, command=lambda: [root.destroy(), exit()]
-    )
-
-    # ダイアログを表示
-    frame1.grid()
-    frame2.grid()
-    frame3.grid()
-    label_description.grid(row=0, column=0)
-    lavel_file.grid(row=0, column=0)
-    file_entry.grid(row=0, column=1)
-    button_file.grid(row=0, column=2)
-    button_read.grid(row=0, column=0, padx=15)
-    button_close.grid(row=0, column=1, padx=15)
-    root.mainloop()
-
-
-def file_button_clicked(entry_text):
-    file_name = filedialog.askopenfilename(
-        title=DialogTitle.OPEN_FILE_DIALOG,
-        filetypes=[("ODSファイル", "*.ods")],
-        initialdir=os.path.dirname(os.path.abspath(sys.executable)),
-    )
-
-    entry_text.set(file_name)
-
-
-def entry_check(entry_text):
-    if entry_text == "":
-        ok_button_dialog(
-            DialogTitle.ERROR_DIALOG,
-            MessageText.BLANK_ENTRY_DIALOG,
-            LabelWidth.BLANK_ENTRY_DIALOG,
-        )
-        return
-
-    if not os.path.isfile(entry_text):
-        ok_button_dialog(
-            DialogTitle.ERROR_DIALOG,
-            MessageText.NOT_EXIST_FILE_DIALOG,
-            LabelWidth.NOT_EXIST_FILE_DIALOG,
-        )
-        return
-
-    if not entry_text.endswith(".ods"):
-        ok_button_dialog(
-            DialogTitle.ERROR_DIALOG,
-            MessageText.WRONG_EXT_DIALOG,
-            LabelWidth.WRONG_EXT_DIALOG,
-        )
-        return
-
-    method_select_dialog(entry_text)
-
-
-def method_select_dialog(entry_text):
-    root = Tk()
-    dialog = MethodSelectDialog(root, entry_text)
+    dialog = FileSelectDialog(root)
     dialog.mainloop()
 
 
-def ok_button_dialog(dialog_title, message_text, label_width):
+def open_ok_button_dialog(dialog_title, message_text, label_width):
     root = Tk()
-    root.title(dialog_title)
-    posx = int(root.winfo_screenwidth() / 5 * 2)
-    posy = int(root.winfo_screenheight() / 5 * 2)
-    root.geometry("+" + str(posx) + "+" + str(posy))
+    dialog = OkButtonDialog(root, dialog_title, message_text, label_width)
+    dialog.mainloop()
 
-    frame1 = ttk.Frame(root, padding=10)
 
-    label_message = ttk.Label(
-        frame1, text=message_text, width=label_width, padding=(10)
-    )
-
-    button_ok = ttk.Button(frame1, text=ButtonText.OK, command=lambda: root.destroy())
-
-    # ダイアログを表示
-    frame1.grid()
-    label_message.grid(row=0, column=0)
-    button_ok.grid(row=1, column=0)
-    root.mainloop()
+def open_method_select_dialog(entry_text):
+    root = Tk()
+    dialog = MethodSelectDialog(root, entry_text)
+    dialog.mainloop()
 
 
 def is_half_width_digit(num_str):
@@ -289,13 +289,13 @@ def one_sheet_convert(entry_text, df, sheet_name):
                 row = [str(elem) for elem in sr.values.tolist()]
                 current_line_convert(row, out_file)
     except:
-        ok_button_dialog(
+        open_ok_button_dialog(
             DialogTitle.ERROR_DIALOG,
             MessageText.FILE_WRITE_ERROR_DIALOG,
             LabelWidth.FILE_WRITE_ERROR_DIALOG,
         )
 
-    ok_button_dialog(
+    open_ok_button_dialog(
         DialogTitle.END_DIALOG, MessageText.END_DIALOG, LabelWidth.END_DIALOG
     )
 
@@ -311,13 +311,13 @@ def all_sheet_convert(entry_text, df_dict):
                     current_line_convert(row, out_file)
                 out_file.write("\n")
     except:
-        ok_button_dialog(
+        open_ok_button_dialog(
             DialogTitle.ERROR_DIALOG,
             MessageText.FILE_WRITE_ERROR_DIALOG,
             LabelWidth.FILE_WRITE_ERROR_DIALOG,
         )
 
-    ok_button_dialog(
+    open_ok_button_dialog(
         DialogTitle.END_DIALOG, MessageText.END_DIALOG, LabelWidth.END_DIALOG
     )
 
