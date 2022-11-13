@@ -4,21 +4,20 @@
 
 import os
 import sys
-from tkinter import EW, Frame, StringVar, Tk, filedialog, ttk
+from tkinter import Frame, StringVar, Tk, filedialog, ttk
 
 import pandas as pd
 
 
 class DialogTitle:
-    FILE_SELECT_DIALOG = "SRPG Studio用 ODSコンバーター"
+    MAIN_DIALOG = "SRPG Studio用 ODSコンバーター"
     OPEN_FILE_DIALOG = "ODSファイルを開く"
-    METHOD_SELECT_DIALOG = "変換方法の選択"
     ERROR_DIALOG = "エラー"
     END_DIALOG = "変換完了"
 
 
 class MessageText:
-    FILE_SELECT_DIALOG = "変換したいODSファイルを選択し、[読み込む]ボタンを押してください。"
+    FILE_SELECT = "変換したいODSファイルを選択し、[読み込む]ボタンを押してください。"
     FILE = "ファイル:"
     ALL_SHEET_CONVERT = "全てのシートを変換"
     ONE_SHEET_CONVERT = "1つのシートを変換"
@@ -42,155 +41,128 @@ class ButtonText:
     NO = "いいえ"
 
 
-class LabelWidth:
-    WRONG_EXT_DIALOG = 35
-    BLANK_ENTRY_DIALOG = 30
-    NOT_EXIST_FILE_DIALOG = 30
-    FILE_OPEN_ERROR_DIALOG = 30
-    FILE_WRITE_ERROR_DIALOG = 30
-    END_DIALOG = 30
-
-
 class SelectedMethodValue:
     ALL_SHEET_CONVERT = "all"
     ONE_SHEET_CONVERT = "one"
 
 
-class MethodSelectDialog(Frame):
-    def __init__(self, root=None, entry_text=""):
-        self.entry_text = entry_text
-        try:
-            self.df_dict = pd.read_excel(self.entry_text, sheet_name=None, engine="odf")
-            self.sheet_names = list(self.df_dict.keys())
-        except:
-            open_ok_button_dialog(
-                DialogTitle.ERROR_DIALOG,
-                MessageText.FILE_OPEN_ERROR_DIALOG,
-                LabelWidth.FILE_OPEN_ERROR_DIALOG,
-            )
+class Application(Tk):
+    def __init__(self, *args, **kwargs):
+        Tk.__init__(self, *args, **kwargs)
 
-        super().__init__(root)
-        root.title(DialogTitle.METHOD_SELECT_DIALOG)
-        posx = int(root.winfo_screenwidth() / 5 * 2)
-        posy = int(root.winfo_screenheight() / 5 * 2)
-        root.geometry("300x135+" + str(posx) + "+" + str(posy))
+        # 親ウィンドウの設定
+        self.title(DialogTitle.MAIN_DIALOG)
+        posx = int(self.winfo_screenwidth() / 3)
+        posy = int(self.winfo_screenheight() / 3)
+        self.geometry("330x120+" + str(posx) + "+" + str(posy))
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
 
-        self.selected_method = StringVar()
-        self.selected_method.set(value=SelectedMethodValue.ONE_SHEET_CONVERT)
+        # ファイル選択フレームの設定
+        self.file_select_frame = Frame()
+
+        # 1段目
+        self.label_discription = ttk.Label(
+            self.file_select_frame, text=MessageText.FILE_SELECT
+        )
+
+        # 2段目
+        self.label_file = ttk.Label(self.file_select_frame, text=MessageText.FILE)
+        self.file_entry_text = StringVar()
+        self.file_entry = ttk.Entry(
+            self.file_select_frame, textvariable=self.file_entry_text
+        )
+        self.button_file = ttk.Button(
+            self.file_select_frame,
+            text=ButtonText.OPEN,
+            command=self.file_button_clicked,
+        )
+
+        # 3段目
+        self.button_read = ttk.Button(
+            self.file_select_frame,
+            text=ButtonText.READ,
+            command=self.read_button_clicked,
+        )
+        self.button_close = ttk.Button(
+            self.file_select_frame,
+            text=ButtonText.CLOSE,
+            command=self.close_button_clicked,
+        )
+
+        # ファイル選択フレームの配置
+        self.file_select_frame.grid(row=0, column=0, sticky="NSEW")
+        self.file_select_frame.grid_rowconfigure(1, weight=1)
+        self.file_select_frame.grid_columnconfigure(1, weight=1)
+        self.file_select_frame.grid_columnconfigure(2, weight=1)
+        self.label_discription.grid(row=0, column=0, columnspan=4, pady=12)
+        self.label_file.grid(row=1, column=0)
+        self.file_entry.grid(row=1, column=1, columnspan=2, sticky="EW")
+        self.button_file.grid(row=1, column=3, ipadx=2)
+        self.button_read.grid(row=2, column=2, pady=12, sticky="E")
+        self.button_close.grid(row=2, column=3, pady=12, sticky="E")
+
+        # 変換方法選択フレームの設定
+        self.method_select_frame = Frame()
+        self.df_dict = dict()
+        self.sheet_names = list()
+
+        # 1段目
+        self.selected_method = StringVar(value=SelectedMethodValue.ONE_SHEET_CONVERT)
         self.radio_all_sheet = ttk.Radiobutton(
-            self,
+            self.method_select_frame,
             text=MessageText.ALL_SHEET_CONVERT,
             value=SelectedMethodValue.ALL_SHEET_CONVERT,
             variable=self.selected_method,
         )
+        self.radio_all_sheet.bind("<ButtonPress>", self.method_radio_clicked)
         self.radio_one_sheet = ttk.Radiobutton(
-            self,
+            self.method_select_frame,
             text=MessageText.ONE_SHEET_CONVERT,
             value=SelectedMethodValue.ONE_SHEET_CONVERT,
             variable=self.selected_method,
         )
-        self.radio_all_sheet.bind("<ButtonPress>", self.select_radio)
-        self.radio_one_sheet.bind("<ButtonPress>", self.select_radio)
+        self.radio_one_sheet.bind("<ButtonPress>", self.method_radio_clicked)
 
+        # 2段目
         self.label_selected_sheet = ttk.Label(
-            self,
+            self.method_select_frame,
             text=MessageText.SELECTED_SHEET,
-            width=12,
-            padding=(10),
         )
-
         self.selected_sheet_name = StringVar()
         self.combo_sheets = ttk.Combobox(
-            self,
-            textvariable=self.selected_sheet_name,
-            values=self.sheet_names,
-            state="readonly",
-            width=20,
+            self.method_select_frame, values=self.sheet_names, state="readonly"
         )
-        self.selected_sheet_name.set(self.sheet_names[0])
-        self.combo_sheets.set(self.sheet_names[0])
-        self.combo_sheets.bind("<<ComboboxSelected>>", self.select_combo)
+        self.combo_sheets.bind("<<ComboboxSelected>>", self.combo_clicked)
 
+        # 3段目
         self.button_convert = ttk.Button(
-            self,
+            self.method_select_frame,
             text=ButtonText.CONVERT,
             state="disable",
-            command=lambda: [root.destroy(), self.convert_fork()],
+            command=self.convert_button_clicked,
         )
         self.button_cancel = ttk.Button(
-            self, text=ButtonText.CANCEL, command=root.destroy
+            self.method_select_frame,
+            text=ButtonText.CANCEL,
+            command=self.cancel_button_clicked,
         )
 
-        self.grid()
-        self.radio_all_sheet.grid(row=0, column=0, padx=10, pady=8)
-        self.radio_one_sheet.grid(row=0, column=1, padx=10, pady=8)
-        self.label_selected_sheet.grid(row=1, column=0, padx=10, pady=8, sticky=EW)
-        self.combo_sheets.grid(row=1, column=1, padx=10, pady=8, sticky=EW)
-        self.button_convert.grid(row=2, column=0, padx=5, pady=9)
-        self.button_cancel.grid(row=2, column=1, padx=5, pady=9)
-        self.master.grid_rowconfigure(0, weight=1)
-        self.master.grid_rowconfigure(1, weight=1)
-        self.master.grid_rowconfigure(2, weight=1)
-        self.master.grid_columnconfigure(0, weight=1)
-        self.master.grid_columnconfigure(1, weight=1)
+        # 変換方法選択フレームの配置
+        self.method_select_frame.grid(row=0, column=0, sticky="NSEW")
+        self.method_select_frame.grid_rowconfigure(2, weight=1)
+        self.method_select_frame.grid_columnconfigure(1, weight=1)
+        self.radio_all_sheet.grid(row=0, column=0, sticky="W")
+        self.radio_one_sheet.grid(row=1, column=0, sticky="W")
+        self.label_selected_sheet.grid(row=2, column=0, sticky="E")
+        self.combo_sheets.grid(row=2, column=1, columnspan=5, sticky="EW")
+        self.button_convert.grid(row=3, column=4, pady=12, sticky="E")
+        self.button_cancel.grid(row=3, column=5, pady=12, sticky="E")
 
-    def select_radio(self, event):
-        if event.widget.cget("value") == SelectedMethodValue.ALL_SHEET_CONVERT:
-            self.selected_method.set(SelectedMethodValue.ALL_SHEET_CONVERT)
-            self.combo_sheets["state"] = "disable"
-        else:
-            self.selected_method.set(SelectedMethodValue.ONE_SHEET_CONVERT)
-            self.combo_sheets["state"] = "readonly"
-        self.button_convert["state"] = "enable"
+        # ファイル選択フレームを前面に
+        self.file_select_frame.tkraise()
 
-    def select_combo(self, event):
-        self.selected_sheet_name.set(self.combo_sheets.get())
-
-    def convert_fork(self):
-        if self.selected_method.get() == SelectedMethodValue.ALL_SHEET_CONVERT:
-            all_sheet_convert(self.entry_text, self.df_dict)
-        else:
-            sheet_name = self.selected_sheet_name.get()
-            df = self.df_dict[sheet_name]
-            one_sheet_convert(self.entry_text, df, sheet_name)
-
-
-class FileSelectDialog(Frame):
-    def __init__(self, root=None):
-        super().__init__(root)
-        root.title(DialogTitle.FILE_SELECT_DIALOG)
-        posx = int(root.winfo_screenwidth() / 3)
-        posy = int(root.winfo_screenheight() / 3)
-        root.geometry("+" + str(posx) + "+" + str(posy))
-
-        self.label_description = ttk.Label(self, text=MessageText.FILE_SELECT_DIALOG)
-
-        self.label_file = ttk.Label(
-            self,
-            text=MessageText.FILE,
-        )
-        self.entry_text = StringVar()
-        self.file_entry = ttk.Entry(self, textvariable=self.entry_text, width=33)
-        self.button_file = ttk.Button(
-            self, text=ButtonText.OPEN, command=lambda: self.file_button_clicked()
-        )
-
-        self.button_read = ttk.Button(
-            self, text=ButtonText.READ, command=lambda: self.entry_check()
-        )
-        self.button_close = ttk.Button(
-            self, text=ButtonText.CLOSE, command=lambda: [root.destroy(), exit()]
-        )
-
-        # ダイアログを表示
-        self.grid()
-        self.label_description.grid(row=0, column=0, columnspan=6, padx=5, pady=5)
-        self.label_file.grid(row=1, column=0, pady=5)
-        self.file_entry.grid(row=1, column=1, columnspan=4, pady=5)
-        self.button_file.grid(row=1, column=5, pady=5)
-        self.button_read.grid(row=2, column=1, columnspan=2, pady=5)
-        self.button_close.grid(row=2, column=3, columnspan=2, pady=5)
-
+    # [参照]ボタンが押されたらファイル選択画面を開く
     def file_button_clicked(self):
         file_name = filedialog.askopenfilename(
             title=DialogTitle.OPEN_FILE_DIALOG,
@@ -198,243 +170,265 @@ class FileSelectDialog(Frame):
             initialdir=os.path.dirname(os.path.abspath(sys.executable)),
         )
 
-        self.entry_text.set(file_name)
+        self.file_entry_text.set(file_name)
 
-    def entry_check(self):
-        entry_text = self.entry_text.get()
+    # [読み込む]ボタンが押されたらファイルのパスと存在チェック
+    # 問題なければファイルを読み込み、変換方法選択フレームに遷移
+    def read_button_clicked(self):
+        entry_text = self.file_entry_text.get()
         if entry_text == "":
-            open_ok_button_dialog(
-                DialogTitle.ERROR_DIALOG,
-                MessageText.BLANK_ENTRY_DIALOG,
-                LabelWidth.BLANK_ENTRY_DIALOG,
+            dialog = OneButtonDialog(
+                Tk(), DialogTitle.ERROR_DIALOG, MessageText.BLANK_ENTRY_DIALOG
             )
+            dialog.mainloop()
+            return
+        elif not os.path.isfile(entry_text):
+            dialog = OneButtonDialog(
+                Tk(), DialogTitle.ERROR_DIALOG, MessageText.NOT_EXIST_FILE_DIALOG
+            )
+            dialog.mainloop()
+            return
+        elif not entry_text.endswith(".ods"):
+            dialog = OneButtonDialog(
+                Tk(), DialogTitle.ERROR_DIALOG, MessageText.WRONG_EXT_DIALOG
+            )
+            dialog.mainloop()
             return
 
-        if not os.path.isfile(entry_text):
-            open_ok_button_dialog(
-                DialogTitle.ERROR_DIALOG,
-                MessageText.NOT_EXIST_FILE_DIALOG,
-                LabelWidth.NOT_EXIST_FILE_DIALOG,
+        try:
+            self.df_dict = pd.read_excel(entry_text, sheet_name=None, engine="odf")
+        except:
+            dialog = OneButtonDialog(
+                Tk(), DialogTitle.ERROR_DIALOG, MessageText.FILE_OPEN_ERROR_DIALOG
             )
-            return
+            dialog.mainloop()
+        self.sheet_names = list(self.df_dict.keys())
+        self.selected_sheet_name.set(self.sheet_names[0])
+        self.combo_sheets["values"] = self.sheet_names
+        self.combo_sheets.set(self.sheet_names[0])
+        self.method_select_frame.tkraise()
 
-        if not entry_text.endswith(".ods"):
-            open_ok_button_dialog(
-                DialogTitle.ERROR_DIALOG,
-                MessageText.WRONG_EXT_DIALOG,
-                LabelWidth.WRONG_EXT_DIALOG,
-            )
-            return
+    # [閉じる]ボタンが押されたらウィジェット削除
+    def close_button_clicked(self):
+        self.destroy()
 
-        open_method_select_dialog(entry_text)
+    # ラジオボタンが押されたらコンボボックスの活性/非活性を切り替える
+    def method_radio_clicked(self, event):
+        if event.widget.cget("value") == SelectedMethodValue.ALL_SHEET_CONVERT:
+            self.combo_sheets["state"] = "disable"
+        else:
+            self.combo_sheets["state"] = "readonly"
+        self.button_convert["state"] = "enable"
 
+    # コンボボックスから選択したシート名で更新
+    def combo_clicked(self, event):
+        self.selected_sheet_name.set(self.combo_sheets.get())
 
-class OkButtonDialog(Frame):
-    def __init__(self, root=None, dialog_title="", message_text="", label_width=0):
-        super().__init__(root)
-        root.title(dialog_title)
-        posx = int(root.winfo_screenwidth() / 5 * 2)
-        posy = int(root.winfo_screenheight() / 5 * 2)
-        root.geometry("+" + str(posx) + "+" + str(posy))
+    # [変換]ボタンが押されたらラジオボタンの状態に応じて変換処理
+    def convert_button_clicked(self):
+        if self.selected_method.get() == SelectedMethodValue.ALL_SHEET_CONVERT:
+            self.all_sheet_convert()
+        else:
+            self.one_sheet_convert()
 
-        self.label_message = ttk.Label(
-            self, text=message_text, width=label_width, padding=(10)
-        )
+    # [キャンセル]ボタンが押されたらファイル選択フレームに遷移
+    def cancel_button_clicked(self):
+        self.file_select_frame.tkraise()
 
-        self.button_ok = ttk.Button(
-            self, text=ButtonText.OK, command=lambda: root.destroy()
-        )
-
-        # ダイアログを表示
-        self.grid()
-        self.label_message.grid(row=0, column=0)
-        self.button_ok.grid(row=1, column=0)
-
-
-def main():
-    open_file_select_dialog()
-
-
-def open_file_select_dialog():
-    root = Tk()
-    dialog = FileSelectDialog(root)
-    dialog.mainloop()
-
-
-def open_ok_button_dialog(dialog_title, message_text, label_width):
-    root = Tk()
-    dialog = OkButtonDialog(root, dialog_title, message_text, label_width)
-    dialog.mainloop()
-
-
-def open_method_select_dialog(entry_text):
-    root = Tk()
-    dialog = MethodSelectDialog(root, entry_text)
-    dialog.mainloop()
-
-
-def is_half_width_digit(num_str):
-    if num_str.isascii() and num_str.isdecimal():
-        return True
-    else:
-        return False
-
-
-def one_sheet_convert(entry_text, df, sheet_name):
-    try:
-        with open(
-            entry_text[:-4] + "_" + sheet_name + ".txt", mode="w", encoding="utf-8"
-        ) as out_file:
-            df.fillna("", inplace=True)
-            for i in range(0, len(df)):
-                sr = df.iloc[i]
-                row = [str(elem) for elem in sr.values.tolist()]
-                current_line_convert(row, out_file)
-    except:
-        open_ok_button_dialog(
-            DialogTitle.ERROR_DIALOG,
-            MessageText.FILE_WRITE_ERROR_DIALOG,
-            LabelWidth.FILE_WRITE_ERROR_DIALOG,
-        )
-
-    open_ok_button_dialog(
-        DialogTitle.END_DIALOG, MessageText.END_DIALOG, LabelWidth.END_DIALOG
-    )
-
-
-def all_sheet_convert(entry_text, df_dict):
-    try:
-        with open(entry_text[:-4] + ".txt", mode="w", encoding="utf-8") as out_file:
-            for df in df_dict.values():
+    # 1シート変換
+    def one_sheet_convert(self):
+        entry_text = self.file_entry_text.get()
+        sheet_name = self.selected_sheet_name.get()
+        df = self.df_dict[sheet_name]
+        try:
+            with open(
+                entry_text[:-4] + "_" + sheet_name + ".txt",
+                mode="w",
+                encoding="utf-8",
+            ) as out_file:
                 df.fillna("", inplace=True)
                 for i in range(0, len(df)):
                     sr = df.iloc[i]
                     row = [str(elem) for elem in sr.values.tolist()]
-                    current_line_convert(row, out_file)
+                    self.current_line_convert(row, out_file)
+            dialog = OneButtonDialog(
+                Tk(), DialogTitle.END_DIALOG, MessageText.END_DIALOG
+            )
+            dialog.mainloop()
+        except:
+            dialog = OneButtonDialog(
+                Tk(), DialogTitle.ERROR_DIALOG, MessageText.FILE_WRITE_ERROR_DIALOG
+            )
+            dialog.mainloop()
+
+    # 全シート変換
+    def all_sheet_convert(self):
+        entry_text = self.file_entry_text.get()
+        try:
+            with open(entry_text[:-4] + ".txt", mode="w", encoding="utf-8") as out_file:
+                for df in self.df_dict.values():
+                    df.fillna("", inplace=True)
+                    for i in range(0, len(df)):
+                        sr = df.iloc[i]
+                        row = [str(elem) for elem in sr.values.tolist()]
+                        self.current_line_convert(row, out_file)
+                    out_file.write("\n")
+            dialog = OneButtonDialog(
+                Tk(), DialogTitle.END_DIALOG, MessageText.END_DIALOG
+            )
+            dialog.mainloop()
+        except:
+            dialog = OneButtonDialog(
+                Tk(), DialogTitle.ERROR_DIALOG, MessageText.FILE_WRITE_ERROR_DIALOG
+            )
+            dialog.mainloop()
+
+    # フォーマットに沿った変換処理
+    def current_line_convert(self, row, out_file):
+        # 0:形式 1:発言者 2:位置 3:表情 4:内容
+        if row[0] == "メッセージ":
+            if row[1] != "":
                 out_file.write("\n")
-    except:
-        open_ok_button_dialog(
-            DialogTitle.ERROR_DIALOG,
-            MessageText.FILE_WRITE_ERROR_DIALOG,
-            LabelWidth.FILE_WRITE_ERROR_DIALOG,
-        )
-
-    open_ok_button_dialog(
-        DialogTitle.END_DIALOG, MessageText.END_DIALOG, LabelWidth.END_DIALOG
-    )
-
-
-def current_line_convert(row, out_file):
-    # 0:形式 1:発言者 2:位置 3:表情 4:内容
-    if row[0] == "メッセージ":
-        if row[1] != "":
-            out_file.write("\n")
-            out_file.write(row[1] + "：" + row[2])
-            if row[3] != "":
-                out_file.write("：" + row[3] + "\n")
+                out_file.write(row[1] + "：" + row[2])
+                if row[3] != "":
+                    out_file.write("：" + row[3] + "\n")
+                else:
+                    out_file.write("\n")
+                out_file.write(row[4] + "\n")
             else:
+                out_file.write(row[4] + "\n")
+        elif row[0] == "テロップ":
+            if row[2] != "":
                 out_file.write("\n")
-            out_file.write(row[4] + "\n")
-        else:
-            out_file.write(row[4] + "\n")
-    elif row[0] == "テロップ":
-        if row[2] != "":
+                out_file.write("テロップ：" + row[2] + "\n")
+                out_file.write(row[4] + "\n")
+            else:
+                out_file.write(row[4] + "\n")
+        elif row[0] == "メッセージタイトル":
+            if row[2] != "":
+                out_file.write("\n")
+                out_file.write("タイトル：" + row[2] + "\n")
+                out_file.write(row[4] + "\n")
+            else:
+                out_file.write(row[4] + "\n")
+        elif row[0] == "スチルメッセージ":
+            if row[1] != "":
+                out_file.write("\n")
+                out_file.write(row[1] + "：スチル\n")
+                out_file.write(row[4] + "\n")
+            else:
+                out_file.write(row[4] + "\n")
+        elif row[0] == "情報ウィンドウ":
+            if row[1] != "":
+                out_file.write("\n")
+                out_file.write("情報：" + row[1] + "\n")
+                out_file.write(row[4] + "\n")
+            else:
+                out_file.write(row[4] + "\n")
+        elif row[0] == "メッセージスクロール":
+            if row[2] != "":
+                out_file.write("\n")
+                out_file.write("スクロール：" + row[2] + "\n")
+                out_file.write(row[4] + "\n")
+            else:
+                out_file.write(row[4] + "\n")
+        elif row[0] == "選択肢":
+            num = "0"
+            if self.is_half_width_digit(row[1]):
+                num = row[1]
+            choices = row[4].split(",")
             out_file.write("\n")
-            out_file.write("テロップ：" + row[2] + "\n")
-            out_file.write(row[4] + "\n")
-        else:
-            out_file.write(row[4] + "\n")
-    elif row[0] == "メッセージタイトル":
-        if row[2] != "":
+            out_file.write("選択肢：" + num + "\n")
+            for c in choices:
+                out_file.write(c + "\n")
+        elif row[0] == "【場所イベント】":
+            num = "0"
+            if self.is_half_width_digit(row[1]):
+                num = row[1]
             out_file.write("\n")
-            out_file.write("タイトル：" + row[2] + "\n")
-            out_file.write(row[4] + "\n")
-        else:
-            out_file.write(row[4] + "\n")
-    elif row[0] == "スチルメッセージ":
-        if row[1] != "":
+            out_file.write("<PL" + num + ">\n")
+        elif row[0] == "【自動開始イベント】":
+            num = "0"
+            if self.is_half_width_digit(row[1]):
+                num = row[1]
             out_file.write("\n")
-            out_file.write(row[1] + "：スチル\n")
-            out_file.write(row[4] + "\n")
-        else:
-            out_file.write(row[4] + "\n")
-    elif row[0] == "情報ウィンドウ":
-        if row[1] != "":
+            out_file.write("<AT" + num + ">\n")
+        elif row[0] == "【会話イベント】":
+            num = "0"
+            if self.is_half_width_digit(row[1]):
+                num = row[1]
             out_file.write("\n")
-            out_file.write("情報：" + row[1] + "\n")
-            out_file.write(row[4] + "\n")
-        else:
-            out_file.write(row[4] + "\n")
-    elif row[0] == "メッセージスクロール":
-        if row[2] != "":
+            out_file.write("<TK" + num + ">\n")
+        elif row[0] == "【オープニングイベント】":
+            num = "0"
+            if self.is_half_width_digit(row[1]):
+                num = row[1]
             out_file.write("\n")
-            out_file.write("スクロール：" + row[2] + "\n")
-            out_file.write(row[4] + "\n")
+            out_file.write("<OP" + num + ">\n")
+        elif row[0] == "【エンディングイベント】":
+            num = "0"
+            if self.is_half_width_digit(row[1]):
+                num = row[1]
+            out_file.write("\n")
+            out_file.write("<ED" + num + ">\n")
+        elif row[0] == "【コミュニケーションイベント】":
+            num = "0"
+            if self.is_half_width_digit(row[1]):
+                num = row[1]
+            out_file.write("\n")
+            out_file.write("<CM" + num + ">\n")
+        elif row[0] == "【回想イベント】":
+            num = "0"
+            if self.is_half_width_digit(row[1]):
+                num = row[1]
+            out_file.write("\n")
+            out_file.write("<RE" + num + ">\n")
+        elif row[0] == "【マップ共有イベント】":
+            num = "0"
+            if self.is_half_width_digit(row[1]):
+                num = row[1]
+            out_file.write("\n")
+            out_file.write("<MC" + num + ">\n")
+        elif row[0] == "【ブックマークイベント】":
+            num = "0"
+            if self.is_half_width_digit(row[1]):
+                num = row[1]
+            out_file.write("\n")
+            out_file.write("<BK" + num + ">\n")
+
+    # 文字列が半角数字か判定
+    def is_half_width_digit(self, num_str):
+        if num_str.isascii() and num_str.isdecimal():
+            return True
         else:
-            out_file.write(row[4] + "\n")
-    elif row[0] == "選択肢":
-        num = "0"
-        if is_half_width_digit(row[1]):
-            num = row[1]
-        choices = row[4].split(",")
-        out_file.write("\n")
-        out_file.write("選択肢：" + num + "\n")
-        for c in choices:
-            out_file.write(c + "\n")
-    elif row[0] == "【場所イベント】":
-        num = "0"
-        if is_half_width_digit(row[1]):
-            num = row[1]
-        out_file.write("\n")
-        out_file.write("<PL" + num + ">\n")
-    elif row[0] == "【自動開始イベント】":
-        num = "0"
-        if is_half_width_digit(row[1]):
-            num = row[1]
-        out_file.write("\n")
-        out_file.write("<AT" + num + ">\n")
-    elif row[0] == "【会話イベント】":
-        num = "0"
-        if is_half_width_digit(row[1]):
-            num = row[1]
-        out_file.write("\n")
-        out_file.write("<TK" + num + ">\n")
-    elif row[0] == "【オープニングイベント】":
-        num = "0"
-        if is_half_width_digit(row[1]):
-            num = row[1]
-        out_file.write("\n")
-        out_file.write("<OP" + num + ">\n")
-    elif row[0] == "【エンディングイベント】":
-        num = "0"
-        if is_half_width_digit(row[1]):
-            num = row[1]
-        out_file.write("\n")
-        out_file.write("<ED" + num + ">\n")
-    elif row[0] == "【コミュニケーションイベント】":
-        num = "0"
-        if is_half_width_digit(row[1]):
-            num = row[1]
-        out_file.write("\n")
-        out_file.write("<CM" + num + ">\n")
-    elif row[0] == "【回想イベント】":
-        num = "0"
-        if is_half_width_digit(row[1]):
-            num = row[1]
-        out_file.write("\n")
-        out_file.write("<RE" + num + ">\n")
-    elif row[0] == "【マップ共有イベント】":
-        num = "0"
-        if is_half_width_digit(row[1]):
-            num = row[1]
-        out_file.write("\n")
-        out_file.write("<MC" + num + ">\n")
-    elif row[0] == "【ブックマークイベント】":
-        num = "0"
-        if is_half_width_digit(row[1]):
-            num = row[1]
-        out_file.write("\n")
-        out_file.write("<BK" + num + ">\n")
+            return False
+
+
+class OneButtonDialog(Frame):
+    def __init__(self, root: Tk, dialog_title, message_text):
+        super().__init__(root)
+        root.title(dialog_title)
+        posx = int(root.winfo_screenwidth() / 5 * 2)
+        posy = int(root.winfo_screenheight() / 5 * 2)
+        root.geometry("220x95+" + str(posx) + "+" + str(posy))
+        root.grid_rowconfigure(0, weight=1)
+        root.grid_columnconfigure(0, weight=1)
+
+        # 1段目
+        self.label_message = ttk.Label(self, text=message_text)
+
+        # 2段目
+        self.button_ok = ttk.Button(self, text=ButtonText.OK, command=root.destroy)
+
+        # ウィジェットの配置
+        self.grid(row=0, column=0, sticky="NSEW")
+        self.label_message.pack(pady=10)
+        self.button_ok.pack(pady=5)
+
+
+def main():
+    app = Application()
+    app.mainloop()
 
 
 if __name__ == "__main__":
