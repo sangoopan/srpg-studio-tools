@@ -1,5 +1,5 @@
 # Copyright (c) 2022 sangoopan
-# Released under the MIT license
+# Released under the MIT license.
 # https://licenses.opensource.jp/MIT/MIT.html
 
 import os
@@ -424,12 +424,3 @@ class OneButtonDialog(Frame):
         self.grid(row=0, column=0, sticky="NSEW")
         self.label_message.pack(pady=10)
         self.button_ok.pack(pady=5)
-
-
-def main():
-    app = Application()
-    app.mainloop()
-
-
-if __name__ == "__main__":
-    main()
