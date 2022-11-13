@@ -139,7 +139,6 @@ class Application(Tk):
         self.button_convert = ttk.Button(
             self.method_select_frame,
             text=ButtonText.CONVERT,
-            state="disable",
             command=self.convert_button_clicked,
         )
         self.button_cancel = ttk.Button(
@@ -218,7 +217,6 @@ class Application(Tk):
             self.combo_sheets["state"] = "disable"
         else:
             self.combo_sheets["state"] = "readonly"
-        self.button_convert["state"] = "enable"
 
     # コンボボックスから選択したシート名で更新
     def combo_clicked(self, event):
