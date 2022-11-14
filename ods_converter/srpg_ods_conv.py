@@ -54,7 +54,7 @@ class Application(Tk):
         self.title(DialogTitle.MAIN_DIALOG)
         posx = int(self.winfo_screenwidth() / 3)
         posy = int(self.winfo_screenheight() / 3)
-        self.geometry("330x120+" + str(posx) + "+" + str(posy))
+        self.geometry(f"330x120+{posx}+{posy}")
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
@@ -238,168 +238,128 @@ class Application(Tk):
         entry_text = self.file_entry_text.get()
         sheet_name = self.selected_sheet_name.get()
         df = self.df_dict[sheet_name]
+        df.fillna("", inplace=True)
+        row_list = df.astype(str).values.tolist()
+        out_text_list = []
+        for row in row_list:
+            self.current_line_convert(row, out_text_list)
+
         try:
             with open(
-                entry_text[:-4] + "_" + sheet_name + ".txt",
+                f"{entry_text[:-4]}_{sheet_name}.txt",
                 mode="w",
                 encoding="utf-8",
             ) as out_file:
-                df.fillna("", inplace=True)
-                for i in range(0, len(df)):
-                    sr = df.iloc[i]
-                    row = [str(elem) for elem in sr.values.tolist()]
-                    self.current_line_convert(row, out_file)
-            dialog = OneButtonDialog(
-                Tk(), DialogTitle.END_DIALOG, MessageText.END_DIALOG
-            )
-            dialog.mainloop()
+                out_file.write("".join(out_text_list))
         except:
             dialog = OneButtonDialog(
                 Tk(), DialogTitle.ERROR_DIALOG, MessageText.FILE_WRITE_ERROR_DIALOG
             )
             dialog.mainloop()
+            return
+
+        dialog = OneButtonDialog(Tk(), DialogTitle.END_DIALOG, MessageText.END_DIALOG)
+        dialog.mainloop()
 
     # 全シート変換
     def all_sheet_convert(self):
         entry_text = self.file_entry_text.get()
+        out_text_list = []
+        for df in self.df_dict.values():
+            df.fillna("", inplace=True)
+            row_list = df.astype(str).values.tolist()
+            for row in row_list:
+                self.current_line_convert(row, out_text_list)
+            out_text_list.append("\n")
+
         try:
-            with open(entry_text[:-4] + ".txt", mode="w", encoding="utf-8") as out_file:
-                for df in self.df_dict.values():
-                    df.fillna("", inplace=True)
-                    for i in range(0, len(df)):
-                        sr = df.iloc[i]
-                        row = [str(elem) for elem in sr.values.tolist()]
-                        self.current_line_convert(row, out_file)
-                    out_file.write("\n")
-            dialog = OneButtonDialog(
-                Tk(), DialogTitle.END_DIALOG, MessageText.END_DIALOG
-            )
-            dialog.mainloop()
+            with open(f"{entry_text[:-4]}.txt", mode="w", encoding="utf-8") as out_file:
+                out_file.write("".join(out_text_list))
         except:
             dialog = OneButtonDialog(
                 Tk(), DialogTitle.ERROR_DIALOG, MessageText.FILE_WRITE_ERROR_DIALOG
             )
             dialog.mainloop()
+            return
+
+        dialog = OneButtonDialog(Tk(), DialogTitle.END_DIALOG, MessageText.END_DIALOG)
+        dialog.mainloop()
 
     # フォーマットに沿った変換処理
-    def current_line_convert(self, row, out_file):
+    def current_line_convert(self, row, out_text_list):
         # 0:形式 1:発言者 2:位置 3:表情 4:内容
         if row[0] == "メッセージ":
             if row[1] != "":
-                out_file.write("\n")
-                out_file.write(row[1] + "：" + row[2])
+                out_text_list.append(f"\n{row[1]}：{row[2]}")
                 if row[3] != "":
-                    out_file.write("：" + row[3] + "\n")
+                    out_text_list.append(f"：{row[3]}\n")
                 else:
-                    out_file.write("\n")
-                out_file.write(row[4] + "\n")
+                    out_text_list.append("\n")
+                out_text_list.append(f"{row[4]}\n")
             else:
-                out_file.write(row[4] + "\n")
+                out_text_list.append(f"{row[4]}\n")
         elif row[0] == "テロップ":
             if row[2] != "":
-                out_file.write("\n")
-                out_file.write("テロップ：" + row[2] + "\n")
-                out_file.write(row[4] + "\n")
+                out_text_list.append(f"\nテロップ：{row[2]}\n{row[4]}\n")
             else:
-                out_file.write(row[4] + "\n")
+                out_text_list.append(f"{row[4]}\n")
         elif row[0] == "メッセージタイトル":
             if row[2] != "":
-                out_file.write("\n")
-                out_file.write("タイトル：" + row[2] + "\n")
-                out_file.write(row[4] + "\n")
+                out_text_list.append(f"\nタイトル：{row[2]}\n{row[4]}\n")
             else:
-                out_file.write(row[4] + "\n")
+                out_text_list.append(f"{row[4]}\n")
         elif row[0] == "スチルメッセージ":
             if row[1] != "":
-                out_file.write("\n")
-                out_file.write(row[1] + "：スチル\n")
-                out_file.write(row[4] + "\n")
+                out_text_list.append(f"\n{row[1]}：スチル\n{row[4]}\n")
             else:
-                out_file.write(row[4] + "\n")
+                out_text_list.append(f"{row[4]}\n")
         elif row[0] == "情報ウィンドウ":
             if row[1] != "":
-                out_file.write("\n")
-                out_file.write("情報：" + row[1] + "\n")
-                out_file.write(row[4] + "\n")
+                out_text_list.append(f"\n情報：{row[1]}\n{row[4]}\n")
             else:
-                out_file.write(row[4] + "\n")
+                out_text_list.append(f"{row[4]}\n")
         elif row[0] == "メッセージスクロール":
             if row[2] != "":
-                out_file.write("\n")
-                out_file.write("スクロール：" + row[2] + "\n")
-                out_file.write(row[4] + "\n")
+                out_text_list.append(f"\nスクロール：{row[2]}\n{row[4]}\n")
             else:
-                out_file.write(row[4] + "\n")
+                out_text_list.append(f"{row[4]}\n")
         elif row[0] == "選択肢":
-            num = "0"
-            if self.is_half_width_digit(row[1]):
-                num = row[1]
+            num = row[1] if self.is_half_width_digit(row[1]) else "0"
             choices = row[4].split(",")
-            out_file.write("\n")
-            out_file.write("選択肢：" + num + "\n")
+            out_text_list.append(f"\n選択肢：{num}\n")
             for c in choices:
-                out_file.write(c + "\n")
+                out_text_list.append(f"{c}\n")
         elif row[0] == "【場所イベント】":
-            num = "0"
-            if self.is_half_width_digit(row[1]):
-                num = row[1]
-            out_file.write("\n")
-            out_file.write("<PL" + num + ">\n")
+            num = row[1] if self.is_half_width_digit(row[1]) else "0"
+            out_text_list.append(f"\n<PL{num}>\n")
         elif row[0] == "【自動開始イベント】":
-            num = "0"
-            if self.is_half_width_digit(row[1]):
-                num = row[1]
-            out_file.write("\n")
-            out_file.write("<AT" + num + ">\n")
+            num = row[1] if self.is_half_width_digit(row[1]) else "0"
+            out_text_list.append(f"\n<AT{num}>\n")
         elif row[0] == "【会話イベント】":
-            num = "0"
-            if self.is_half_width_digit(row[1]):
-                num = row[1]
-            out_file.write("\n")
-            out_file.write("<TK" + num + ">\n")
+            num = row[1] if self.is_half_width_digit(row[1]) else "0"
+            out_text_list.append(f"\n<TK{num}>\n")
         elif row[0] == "【オープニングイベント】":
-            num = "0"
-            if self.is_half_width_digit(row[1]):
-                num = row[1]
-            out_file.write("\n")
-            out_file.write("<OP" + num + ">\n")
+            num = row[1] if self.is_half_width_digit(row[1]) else "0"
+            out_text_list.append(f"\n<OP{num}>\n")
         elif row[0] == "【エンディングイベント】":
-            num = "0"
-            if self.is_half_width_digit(row[1]):
-                num = row[1]
-            out_file.write("\n")
-            out_file.write("<ED" + num + ">\n")
+            num = row[1] if self.is_half_width_digit(row[1]) else "0"
+            out_text_list.append(f"\n<ED{num}>\n")
         elif row[0] == "【コミュニケーションイベント】":
-            num = "0"
-            if self.is_half_width_digit(row[1]):
-                num = row[1]
-            out_file.write("\n")
-            out_file.write("<CM" + num + ">\n")
+            num = row[1] if self.is_half_width_digit(row[1]) else "0"
+            out_text_list.append(f"\n<CM{num}>\n")
         elif row[0] == "【回想イベント】":
-            num = "0"
-            if self.is_half_width_digit(row[1]):
-                num = row[1]
-            out_file.write("\n")
-            out_file.write("<RE" + num + ">\n")
+            num = row[1] if self.is_half_width_digit(row[1]) else "0"
+            out_text_list.append(f"\n<RE{num}>\n")
         elif row[0] == "【マップ共有イベント】":
-            num = "0"
-            if self.is_half_width_digit(row[1]):
-                num = row[1]
-            out_file.write("\n")
-            out_file.write("<MC" + num + ">\n")
+            num = row[1] if self.is_half_width_digit(row[1]) else "0"
+            out_text_list.append(f"\n<MC{num}>\n")
         elif row[0] == "【ブックマークイベント】":
-            num = "0"
-            if self.is_half_width_digit(row[1]):
-                num = row[1]
-            out_file.write("\n")
-            out_file.write("<BK" + num + ">\n")
+            num = row[1] if self.is_half_width_digit(row[1]) else "0"
+            out_text_list.append(f"\n<BK{num}>\n")
 
     # 文字列が半角数字か判定
     def is_half_width_digit(self, num_str):
-        if num_str.isascii() and num_str.isdecimal():
-            return True
-        else:
-            return False
+        return True if num_str.isascii() and num_str.isdecimal() else False
 
 
 class OneButtonDialog(Frame):
@@ -408,7 +368,7 @@ class OneButtonDialog(Frame):
         root.title(dialog_title)
         posx = int(root.winfo_screenwidth() / 5 * 2)
         posy = int(root.winfo_screenheight() / 5 * 2)
-        root.geometry("220x95+" + str(posx) + "+" + str(posy))
+        root.geometry(f"220x95+{posx}+{posy}")
         root.grid_rowconfigure(0, weight=1)
         root.grid_columnconfigure(0, weight=1)
 
