@@ -338,6 +338,8 @@ class Application(TkinterDnD.Tk):
             choices = row[5].split(",")
             for c in choices:
                 out_text_list.append(f"{c}\n")
+        elif row[0] == "【ユニットイベント】":
+            out_text_list.append(f"\n<({self.convert_id(row[1])}){row[2]}>\n")
         elif row[0] == "【場所イベント】":
             out_text_list.append(f"\n<PL{self.convert_id(row[1])}>\n")
         elif row[0] == "【自動開始イベント】":
