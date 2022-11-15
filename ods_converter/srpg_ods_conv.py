@@ -358,6 +358,12 @@ class Application(TkinterDnD.Tk):
             out_text_list.append(f"\n<MC{self.convert_id(row[1])}>\n")
         elif row[0] == "【ブックマークイベント】":
             out_text_list.append(f"\n<BK{self.convert_id(row[1])}>\n")
+        elif row[0] == "【世界観設定】":
+            page = "" if self.convert_id(row[1]) < 1 else self.convert_id(row[1])
+            if row[2] != "":
+                out_text_list.append(f"\n<{row[2]}{page}>\n{row[5]}\n")
+            else:
+                out_text_list.append(f"{row[5]}\n")
 
     # id欄の文字列を整数値に変換
     def convert_id(self, num_str):
