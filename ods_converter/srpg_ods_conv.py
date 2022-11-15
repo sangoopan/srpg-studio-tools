@@ -7,6 +7,7 @@ import sys
 from tkinter import Frame, StringVar, Tk, filedialog, ttk
 
 import pandas as pd
+from tkinterdnd2 import *
 
 
 class DialogTitle:
@@ -46,9 +47,9 @@ class SelectedMethodValue:
     ONE_SHEET_CONVERT = "one"
 
 
-class Application(Tk):
+class Application(TkinterDnD.Tk):
     def __init__(self, *args, **kwargs):
-        Tk.__init__(self, *args, **kwargs)
+        TkinterDnD.Tk.__init__(self, *args, **kwargs)
 
         # 親ウィンドウの設定
         self.title(DialogTitle.MAIN_DIALOG)
@@ -60,6 +61,8 @@ class Application(Tk):
 
         # ファイル選択フレームの設定
         self.file_select_frame = Frame()
+        self.file_select_frame.drop_target_register(DND_FILES)
+        self.file_select_frame.dnd_bind("<<Drop>>", func=self.drop_file)
 
         # 1段目
         self.label_discription = ttk.Label(
@@ -170,6 +173,13 @@ class Application(Tk):
         )
 
         self.file_entry_text.set(file_name)
+
+    # ドラッグ&ドロップしたファイルのパスを取得
+    # ファイルが複数のときは先頭のパスのみ
+    def drop_file(self, event=None):
+        if event:
+            file_paths = self.tk.splitlist(event.data)
+            self.file_entry_text.set(file_paths[0])
 
     # [読み込む]ボタンが押されたらファイルのパスと存在チェック
     # 問題なければファイルを読み込み、変換方法選択フレームに遷移
