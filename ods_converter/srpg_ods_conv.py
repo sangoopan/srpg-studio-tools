@@ -297,79 +297,74 @@ class Application(TkinterDnD.Tk):
 
     # フォーマットに沿った変換処理
     def current_line_convert(self, row, out_text_list):
-        # 0:形式 1:発言者 2:位置 3:表情 4:内容
+        # 0:形式 1:id 2:名前 3:位置 4:表情 5:内容
         if row[0] == "メッセージ":
-            if row[1] != "":
-                out_text_list.append(f"\n{row[1]}：{row[2]}")
-                if row[3] != "":
-                    out_text_list.append(f"：{row[3]}\n")
+            if row[2] != "":
+                out_text_list.append(f"\n{row[2]}：{row[3]}")
+                if row[4] != "":
+                    out_text_list.append(f"：{row[4]}\n")
                 else:
                     out_text_list.append("\n")
-                out_text_list.append(f"{row[4]}\n")
+                out_text_list.append(f"{row[5]}\n")
             else:
-                out_text_list.append(f"{row[4]}\n")
+                out_text_list.append(f"{row[5]}\n")
         elif row[0] == "テロップ":
-            if row[2] != "":
-                out_text_list.append(f"\nテロップ：{row[2]}\n{row[4]}\n")
+            if row[3] != "":
+                out_text_list.append(f"\nテロップ：{row[3]}\n{row[5]}\n")
             else:
-                out_text_list.append(f"{row[4]}\n")
+                out_text_list.append(f"{row[5]}\n")
         elif row[0] == "メッセージタイトル":
-            if row[2] != "":
-                out_text_list.append(f"\nタイトル：{row[2]}\n{row[4]}\n")
+            if row[3] != "":
+                out_text_list.append(f"\nタイトル：{row[3]}\n{row[5]}\n")
             else:
-                out_text_list.append(f"{row[4]}\n")
+                out_text_list.append(f"{row[5]}\n")
         elif row[0] == "スチルメッセージ":
-            if row[1] != "":
-                out_text_list.append(f"\n{row[1]}：スチル\n{row[4]}\n")
-            else:
-                out_text_list.append(f"{row[4]}\n")
-        elif row[0] == "情報ウィンドウ":
-            if row[1] != "":
-                out_text_list.append(f"\n情報：{row[1]}\n{row[4]}\n")
-            else:
-                out_text_list.append(f"{row[4]}\n")
-        elif row[0] == "メッセージスクロール":
             if row[2] != "":
-                out_text_list.append(f"\nスクロール：{row[2]}\n{row[4]}\n")
+                out_text_list.append(f"\n{row[2]}：スチル\n{row[5]}\n")
             else:
-                out_text_list.append(f"{row[4]}\n")
+                out_text_list.append(f"{row[5]}\n")
+        elif row[0] == "情報ウィンドウ":
+            if row[2] != "":
+                out_text_list.append(f"\n情報：{row[2]}\n{row[5]}\n")
+            else:
+                out_text_list.append(f"{row[5]}\n")
+        elif row[0] == "メッセージスクロール":
+            if row[3] != "":
+                out_text_list.append(f"\nスクロール：{row[3]}\n{row[5]}\n")
+            else:
+                out_text_list.append(f"{row[5]}\n")
         elif row[0] == "選択肢":
-            num = row[1] if self.is_half_width_digit(row[1]) else "0"
-            choices = row[4].split(",")
-            out_text_list.append(f"\n選択肢：{num}\n")
+            out_text_list.append(f"\n選択肢：{self.convert_id(row[1])}\n")
+            choices = row[5].split(",")
             for c in choices:
                 out_text_list.append(f"{c}\n")
         elif row[0] == "【場所イベント】":
-            num = row[1] if self.is_half_width_digit(row[1]) else "0"
-            out_text_list.append(f"\n<PL{num}>\n")
+            out_text_list.append(f"\n<PL{self.convert_id(row[1])}>\n")
         elif row[0] == "【自動開始イベント】":
-            num = row[1] if self.is_half_width_digit(row[1]) else "0"
-            out_text_list.append(f"\n<AT{num}>\n")
+            out_text_list.append(f"\n<AT{self.convert_id(row[1])}>\n")
         elif row[0] == "【会話イベント】":
-            num = row[1] if self.is_half_width_digit(row[1]) else "0"
-            out_text_list.append(f"\n<TK{num}>\n")
+            out_text_list.append(f"\n<TK{self.convert_id(row[1])}>\n")
         elif row[0] == "【オープニングイベント】":
-            num = row[1] if self.is_half_width_digit(row[1]) else "0"
-            out_text_list.append(f"\n<OP{num}>\n")
+            out_text_list.append(f"\n<OP{self.convert_id(row[1])}>\n")
         elif row[0] == "【エンディングイベント】":
-            num = row[1] if self.is_half_width_digit(row[1]) else "0"
-            out_text_list.append(f"\n<ED{num}>\n")
+            out_text_list.append(f"\n<ED{self.convert_id(row[1])}>\n")
         elif row[0] == "【コミュニケーションイベント】":
-            num = row[1] if self.is_half_width_digit(row[1]) else "0"
-            out_text_list.append(f"\n<CM{num}>\n")
+            out_text_list.append(f"\n<CM{self.convert_id(row[1])}>\n")
         elif row[0] == "【回想イベント】":
-            num = row[1] if self.is_half_width_digit(row[1]) else "0"
-            out_text_list.append(f"\n<RE{num}>\n")
+            out_text_list.append(f"\n<RE{self.convert_id(row[1])}>\n")
         elif row[0] == "【マップ共有イベント】":
-            num = row[1] if self.is_half_width_digit(row[1]) else "0"
-            out_text_list.append(f"\n<MC{num}>\n")
+            out_text_list.append(f"\n<MC{self.convert_id(row[1])}>\n")
         elif row[0] == "【ブックマークイベント】":
-            num = row[1] if self.is_half_width_digit(row[1]) else "0"
-            out_text_list.append(f"\n<BK{num}>\n")
+            out_text_list.append(f"\n<BK{self.convert_id(row[1])}>\n")
 
-    # 文字列が半角数字か判定
-    def is_half_width_digit(self, num_str):
-        return True if num_str.isascii() and num_str.isdecimal() else False
+    # id欄の文字列を整数値に変換
+    def convert_id(self, num_str):
+        try:
+            float(num_str)
+        except ValueError:
+            return 0
+        else:
+            return int(float(num_str))
 
 
 class OneButtonDialog(Frame):
