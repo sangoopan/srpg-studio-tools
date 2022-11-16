@@ -4,7 +4,8 @@
 
 import os
 import sys
-from tkinter import Frame, StringVar, Tk, filedialog, ttk
+import webbrowser
+from tkinter import BOTTOM, Frame, Menu, StringVar, Tk, filedialog, ttk
 
 import pandas as pd
 from tkinterdnd2 import *
@@ -29,6 +30,19 @@ class MessageText:
     FILE_OPEN_ERROR_DIALOG = "ファイルの読み込みに失敗しました。"
     FILE_WRITE_ERROR_DIALOG = "ファイルの書き込みに失敗しました。"
     END_DIALOG = "ファイルの変換が完了しました。"
+    HELP = "ヘルプ"
+    HELP_README = "readme（ブラウザが開きます）"
+    HELP_VERSION = "バージョン情報"
+    SOFTWARE_NAME = "『SRPG Studio用 ODSコンバーター』"
+    VERSION = "バージョン:1.1.0"
+    AUTHER = "作者:さんごぱん(sangoopan)"
+    COPY_RIGHT = "Copyright (c) 2022 sangoopan"
+    LICENSE = "This software is released under the MIT license."
+
+
+class LinkUrl:
+    README = "https://github.com/sangoopan/srpg-studio-tools/tree/main/ods_converter"
+    LICENSE = "https://licenses.opensource.jp/MIT/MIT.html"
 
 
 class ButtonText:
@@ -58,6 +72,19 @@ class Application(TkinterDnD.Tk):
         self.geometry(f"330x120+{posx}+{posy}")
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
+
+        # メニューバーの設定
+        self.menu_bar = Menu(self)
+        self.config(menu=self.menu_bar)
+        self.menu_help = Menu(self, tearoff=0)
+        self.menu_bar.add_cascade(label=MessageText.HELP, menu=self.menu_help)
+        self.menu_help.add_command(
+            label=MessageText.HELP_README, command=self.open_readme
+        )
+        self.menu_help.add_separator()
+        self.menu_help.add_command(
+            label=MessageText.HELP_VERSION, command=self.open_version_dialog
+        )
 
         # ファイル選択フレームの設定
         self.file_select_frame = Frame()
@@ -163,6 +190,15 @@ class Application(TkinterDnD.Tk):
 
         # ファイル選択フレームを前面に
         self.file_select_frame.tkraise()
+
+    # GitHubのreadmeを開く
+    def open_readme(self):
+        webbrowser.open_new(LinkUrl.README)
+
+    # バージョン情報を開く
+    def open_version_dialog(self):
+        dialog = VersionDialog(Tk())
+        dialog.mainloop()
 
     # [参照]ボタンが押されたらファイル選択画面を開く
     def file_button_clicked(self):
@@ -395,3 +431,33 @@ class OneButtonDialog(Frame):
         self.grid(row=0, column=0, sticky="NSEW")
         self.label_message.pack(pady=10)
         self.button_ok.pack(pady=5)
+
+
+class VersionDialog(Frame):
+    def __init__(self, root: Tk):
+        super().__init__(root)
+        root.title("バージョン情報")
+        posx = int(root.winfo_screenwidth() / 5 * 2)
+        posy = int(root.winfo_screenheight() / 5 * 2)
+        root.geometry(f"300x110+{posx}+{posy}")
+        root.grid_rowconfigure(0, weight=1)
+        root.grid_columnconfigure(0, weight=1)
+
+        self.label_software_name = ttk.Label(self, text=MessageText.SOFTWARE_NAME)
+        self.label_version = ttk.Label(self, text=MessageText.VERSION)
+        self.label_auther = ttk.Label(self, text=MessageText.AUTHER)
+        self.label_copy_right = ttk.Label(self, text=MessageText.COPY_RIGHT)
+        self.label_license = ttk.Label(
+            self, text=MessageText.LICENSE, foreground="#449", cursor="hand2"
+        )
+        self.label_license.bind(
+            "<Button-1>", lambda e: webbrowser.open_new(LinkUrl.LICENSE)
+        )
+
+        # ウィジェットの配置
+        self.grid(row=0, column=0, sticky="NSEW")
+        self.label_software_name.pack()
+        self.label_version.pack()
+        self.label_auther.pack()
+        self.label_license.pack(side=BOTTOM)
+        self.label_copy_right.pack(side=BOTTOM)
