@@ -7,24 +7,24 @@ import sys
 import webbrowser
 from tkinter import BOTTOM, Frame, Menu, StringVar, Tk, filedialog, ttk
 
-import pandas as pd
+import openpyxl as px
 from tkinterdnd2 import *
 
 
 class DialogTitle:
-    MAIN_DIALOG = "SRPG Studio用 ODSコンバーター"
-    OPEN_FILE_DIALOG = "ODSファイルを開く"
+    MAIN_DIALOG = "SRPG Studio用テキストコンバーター"
+    OPEN_FILE_DIALOG = "ファイルを開く"
     ERROR_DIALOG = "エラー"
     END_DIALOG = "変換完了"
 
 
 class MessageText:
-    FILE_SELECT = "変換したいODSファイルを選択し、[読み込む]ボタンを押してください。"
+    FILE_SELECT = "変換したいXLSXファイルを選択し、[読み込む]ボタンを押してください。"
     FILE = "ファイル:"
     ALL_SHEET_CONVERT = "全てのシートを変換"
     ONE_SHEET_CONVERT = "1つのシートを変換"
     SELECTED_SHEET = "変換するシート:"
-    WRONG_EXT_DIALOG = "異なる形式のファイルが選択されました。\nods形式のファイルを選択し直してください。"
+    WRONG_EXT_DIALOG = "異なる形式のファイルが選択されました。\nxlsx形式のファイルを選択し直してください。"
     BLANK_ENTRY_DIALOG = "ファイル名を指定してください。"
     NOT_EXIST_FILE_DIALOG = "存在しないファイルです。\nファイルを選択し直してください。"
     FILE_OPEN_ERROR_DIALOG = "ファイルの読み込みに失敗しました。"
@@ -33,8 +33,8 @@ class MessageText:
     HELP = "ヘルプ"
     HELP_README = "readme（ブラウザが開きます）"
     HELP_VERSION = "バージョン情報"
-    SOFTWARE_NAME = "『SRPG Studio用 ODSコンバーター』"
-    VERSION = "バージョン:1.1.0"
+    SOFTWARE_NAME = "『SRPG Studio用テキストコンバーター』"
+    VERSION = "バージョン:2.0.0"
     AUTHER = "作者:さんごぱん(sangoopan)"
     COPY_RIGHT = "Copyright (c) 2022 sangoopan"
     LICENSE = "This software is released under the MIT license."
@@ -204,7 +204,7 @@ class Application(TkinterDnD.Tk):
     def file_button_clicked(self):
         file_name = filedialog.askopenfilename(
             title=DialogTitle.OPEN_FILE_DIALOG,
-            filetypes=[("ODSファイル", "*.ods")],
+            filetypes=[("XLSXファイル", "*.xlsx")],
             initialdir=os.path.dirname(os.path.abspath(sys.executable)),
         )
 
@@ -233,7 +233,7 @@ class Application(TkinterDnD.Tk):
             )
             dialog.mainloop()
             return
-        elif not entry_text.endswith(".ods"):
+        elif not entry_text.endswith(".xlsx"):
             dialog = OneButtonDialog(
                 Tk(), DialogTitle.ERROR_DIALOG, MessageText.WRONG_EXT_DIALOG
             )
@@ -241,13 +241,15 @@ class Application(TkinterDnD.Tk):
             return
 
         try:
-            self.df_dict = pd.read_excel(entry_text, sheet_name=None, engine="odf")
+            self.book = px.load_workbook(entry_text)
         except:
             dialog = OneButtonDialog(
                 Tk(), DialogTitle.ERROR_DIALOG, MessageText.FILE_OPEN_ERROR_DIALOG
             )
             dialog.mainloop()
-        self.sheet_names = list(self.df_dict.keys())
+            return
+
+        self.sheet_names = self.book.sheetnames
         self.selected_sheet_name.set(self.sheet_names[0])
         self.combo_sheets["values"] = self.sheet_names
         self.combo_sheets.set(self.sheet_names[0])
@@ -283,16 +285,23 @@ class Application(TkinterDnD.Tk):
     def one_sheet_convert(self):
         entry_text = self.file_entry_text.get()
         sheet_name = self.selected_sheet_name.get()
-        df = self.df_dict[sheet_name]
-        df.fillna("", inplace=True)
-        row_list = df.astype(str).values.tolist()
+        sheet = self.book[sheet_name]
+        row_list = []
+        for cells in tuple(sheet.rows):
+            row = [""] * 6
+            count = 0
+            for cell in cells:
+                row[count] = "" if cell.value is None else cell.value
+                count += 1
+            row_list.append(row)
+
         out_text_list = []
         for row in row_list:
             self.current_line_convert(row, out_text_list)
 
         try:
             with open(
-                f"{entry_text[:-4]}_{sheet_name}.txt",
+                f"{entry_text[:-5]}_{sheet_name}.txt",
                 mode="w",
                 encoding="utf-8",
             ) as out_file:
@@ -311,15 +320,22 @@ class Application(TkinterDnD.Tk):
     def all_sheet_convert(self):
         entry_text = self.file_entry_text.get()
         out_text_list = []
-        for df in self.df_dict.values():
-            df.fillna("", inplace=True)
-            row_list = df.astype(str).values.tolist()
+        for sheet_name in self.sheet_names:
+            sheet = self.book[sheet_name]
+            row_list = []
+            for cells in tuple(sheet.rows):
+                row = [""] * 6
+                count = 0
+                for cell in cells:
+                    row[count] = "" if cell.value is None else cell.value
+                    count += 1
+                row_list.append(row)
             for row in row_list:
                 self.current_line_convert(row, out_text_list)
             out_text_list.append("\n")
 
         try:
-            with open(f"{entry_text[:-4]}.txt", mode="w", encoding="utf-8") as out_file:
+            with open(f"{entry_text[:-5]}.txt", mode="w", encoding="utf-8") as out_file:
                 out_file.write("".join(out_text_list))
         except:
             dialog = OneButtonDialog(
