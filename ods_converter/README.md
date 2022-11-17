@@ -1,6 +1,6 @@
-# SRPG Studio 用 ODS コンバーター
+# SRPG Studio 用テキストコンバーター
 
-ODS ファイルを SRPG Studio にインポート可能な形式のテキストファイルに変換するツールです。
+Excel で編集したシナリオ（イベント内容や世界観設定など）を SRPG Studio にインポート可能な形式のテキストファイルに変換するツールです。
 
 <br>
 
@@ -10,7 +10,7 @@ ODS ファイルを SRPG Studio にインポート可能な形式のテキスト
 
 # 使用デモ
 
-同梱のテンプレート.ods を Excel や LibreOffice Calc などの表計算ソフトで開き、シート「テンプレート」をもとに指定のフォーマットに沿ってイベント内容を記述します。
+同梱のテンプレート.xlsx を Excel や LibreOffice Calc などの表計算ソフトで開き、シート「テンプレート」をもとに指定のフォーマットに沿ってイベント内容などを記述します。
 
 <br>
 
@@ -26,21 +26,21 @@ ODS ファイルを SRPG Studio にインポート可能な形式のテキスト
 
 <br>
 
-ツールを起動し、ODS ファイルを読み込みます。
+ツールを起動し、xlsx ファイルを読み込みます。
 
-![image](https://user-images.githubusercontent.com/117929386/202143442-8873c27e-a8a1-480e-b298-1fad43f4d14f.png)
+![image](https://user-images.githubusercontent.com/117929386/202430619-1a1fad2f-1721-4f0f-a9bc-7d4fbd985bb6.png)
 
 <br>
 
 ファイルはドラッグ&ドロップで開くこともできます。
 
-![gif](https://user-images.githubusercontent.com/117929386/202141662-12745edb-5afc-44d9-ba3e-d59b6087d6f4.gif)
+![gif](https://user-images.githubusercontent.com/117929386/202434694-280569eb-8178-4212-a008-bb896c4a742a.gif)
 
 <br>
 
-「全てのシートを変換」は、読み込んだ ODS ファイルの全シートを変換し、1 つのテキストファイルにまとめて出力します。
+「全てのシートを変換」は、読み込んだ xlsx ファイルの全シートを変換し、1 つのテキストファイルにまとめて出力します。
 
-![image](https://user-images.githubusercontent.com/117929386/202143629-7c2ff249-68dc-4f52-9ceb-0d91644bfba3.png)
+![image](https://user-images.githubusercontent.com/117929386/202430732-c276eb6c-5fe4-4717-be5b-231ffdd257c0.png)
 
 <br>
 
@@ -52,7 +52,7 @@ ODS ファイルを SRPG Studio にインポート可能な形式のテキスト
 
 「1 つのシートを変換」は、シートを 1 つ選択して変換します。
 
-![image](https://user-images.githubusercontent.com/117929386/202144105-dfd11db0-3159-442c-bd7f-58794f86b346.png)
+![image](https://user-images.githubusercontent.com/117929386/202430808-9eea16c4-160a-4c10-bf87-338920e59d63.png)
 
 <br>
 
@@ -70,8 +70,7 @@ ODS ファイルを SRPG Studio にインポート可能な形式のテキスト
 
 ライブラリ
 
-- pandas(1.5.1)
-- odfpy(1.4.1)
+- openpyxl(3.0.10)
 - TkinterDnD2(0.3.0)
 
 <br>
@@ -80,25 +79,25 @@ ODS ファイルを SRPG Studio にインポート可能な形式のテキスト
 
 ## 1.ダウンロード
 
-[リリースノート](https://github.com/sangoopan/srpg-studio-tools/releases/tag/v1.0.0)から SRPG_Studio_ODS.zip をダウンロードします。
+[リリースノート](https://github.com/sangoopan/srpg-studio-tools/releases/tag/v2.0.0)から SRPG_Studio_Conv.zip をダウンロードします。
 
-![image](https://user-images.githubusercontent.com/117929386/202169042-9728b456-5ee5-4361-a2db-2786aa095a35.png)
+![image](https://user-images.githubusercontent.com/117929386/202439794-7917e85d-eb85-41cf-9bde-b91e1e7ffd54.png)
 
 <br>
 
 ZIP ファイルを解凍したら、中に以下のファイルが入っていることを確認します。
 
-- srpg_ods_conv.exe
-- テンプレート.ods
+- srpg_text_conv.exe
+- テンプレート.xlsx
 - readme.txt
 
-![image](https://user-images.githubusercontent.com/117929386/201521267-be87d630-79de-420e-ab68-1159d196d56e.png)
+![image](https://user-images.githubusercontent.com/117929386/202431659-80564d3b-3b76-468f-99c3-7f162eaebc65.png)
 
 <br>
 
 ## 2.テンプレートにイベント内容を入力
 
-テンプレート.ods のシート「テンプレート」をコピー、もしくはそのまま使い、  
+テンプレート.xlsx のシート「テンプレート」をコピー、もしくはそのまま使い、  
 以下のフォーマットに沿ってイベント内容を記述します。  
 「形式」「位置」「表情」の列はプルダウンリストから内容を選択できます。
 
@@ -136,19 +135,19 @@ ZIP ファイルを解凍したら、中に以下のファイルが入ってい�
 
 <br>
 
-テンプレート.ods のシート「入力例 1」「入力例 2」「入力例 3」に入力例が載っているので、適宜ご参照ください。
+テンプレート.xlsx のシート「入力例 1」「入力例 2」「入力例 3」に入力例が載っているので、適宜ご参照ください。
 
 <br>
 
-## 3.本ツールで ODS ファイルを読み込み、テキストファイルに変換する
+## 3.本ツールで xlsx ファイルを読み込み、テキストファイルに変換する
 
-srpg_ods_conv.exe を実行して SRPG Studio 用 ODS コンバーターを起動し、  
-2.で編集した ODS ファイルを読み込んで変換します。
+srpg_text_conv.exe を実行して SRPG Studio 用テキストコンバーターを起動し、  
+2.で編集した xlsx ファイルを読み込んで変換します。
 
-テキストファイルは ODS ファイルと同じフォルダに出力され、  
+テキストファイルは変換元の xlsx ファイルと同じフォルダに出力され、  
 ファイル名は  
-「全てのシートを変換」を選択 → "<読み込んだ ODS ファイルの名前>.txt"  
-「1 つのシートを変換」を選択 → "<読み込んだ ODS ファイルの名前>\_<選択したシート名>.txt"  
+「全てのシートを変換」を選択 → "<読み込んだ xlsx ファイルの名前>.txt"  
+「1 つのシートを変換」を選択 → "<読み込んだ xlsx ファイルの名前>\_<選択したシート名>.txt"  
 になります。
 
 <br>
