@@ -16,13 +16,13 @@ Excel で編集したシナリオ（イベント内容や世界観設定など�
 
 **入力例 1**
 
-![image](https://user-images.githubusercontent.com/117929386/201516394-d2838ee5-4c01-43bc-a6e1-3d4d055cd6d1.PNG)
+![image](https://user-images.githubusercontent.com/117929386/202473475-528d9d89-34b2-43ae-8a35-44780f514abb.png)
 
 <br>
 
 **入力例 2**
 
-![image](https://user-images.githubusercontent.com/117929386/201516418-9578f3a5-9dae-4a18-a9c4-f66e671d17b2.PNG)
+![image](https://user-images.githubusercontent.com/117929386/202473704-08d672de-bc8e-4e38-80e7-c8eaacf7158c.png)
 
 <br>
 
